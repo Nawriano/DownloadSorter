@@ -185,9 +185,9 @@ namespace DownloadSorter
         {
             int FolderIndex = 0;
             //eventLog.WriteEntry("FileName origo: " + fileName + "FileName bez konce: " + fileName1 + "filename s datem a koncem: " + fileName2 , EventLogEntryType.Information);  // for debuging purposes - LOGS
+            string StarAndfileExtension = fileExtension.Insert(0, "*");
             foreach (List<string> AllExt in AllExtensionsHere)
             {
-                string StarAndfileExtension = fileExtension.Insert(0, "*");
                 eventLog.WriteEntry("Current file extensions scanning: " + AllExt, EventLogEntryType.Information);  // for debuging purposes - LOGS
                 eventLog.WriteEntry("Ext to scan: " + StarAndfileExtension + " Default Ext: " + fileExtension, EventLogEntryType.Information);  // for debuging purposes - LOGS
                 eventLog.WriteEntry("AllExt Format Check: " + AllExt[0],EventLogEntryType.Information);  // for debuging purposes - LOGS
