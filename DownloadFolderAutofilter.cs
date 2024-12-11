@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
+using System.Net;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,10 +51,69 @@ namespace DownloadSorter
                 eventLog.WriteEntry("Timer failed to start.", EventLogEntryType.Error);
             }
             userName = getUserName();
+            CreateSettigns();
+            InsertSettings();
             // Keep the service running
             Task.Run(() => KeepServiceRunning());
             base.OnStart(args);
         }
+
+        private void CreateSettigns()
+        {
+            if (!Directory.Exists($"C:\\Users\\{userName}\\Downloads\\Settings"))
+            {
+                Directory.CreateDirectory($"C:\\Users\\{userName}\\Downloads\\Settings");
+            }
+            if (!File.Exists($"C:\\Users\\{userName}\\Downloads\\Settings\\Settings.txt"))
+            {
+                string[] lines = 
+                    {
+                        "#######################################################################################################################################################################################################",
+                        "# <- this is comment character, if you want to put notes or something MAKE SURE you put # as first character (without space on start), code will ignore that line and will not work with it           #",
+                        "#   -Make sure before EACH edit you Uninstall service, edit settings and then install again because this txt is run once at start                                                                     #",
+                        "#   -Strictly follow format as it is written here, if you want to put some custom extensions like \"*.PARTY.PNG\" make sure it is above folder with extension PNG otherwise it will go to PNG folder    #",
+                        "#    because it scans if file contains extension and if it does it automatically sends it to that folder ignoring any other custom extensions after.                                                  #",
+                        "#   -Below this line you can put your custom Extensions or edit whatever you want even name, make sure they are above original one.                                                                   #",
+                        "#######################################################################################################################################################################################################",
+                        "Images;*.JPG,*.JPEG,*.PNG,*.GIF,*.BMP,*.TIFF,*.TIF,*.WEBP,*.SVG,*.ICO",
+                        "Audios;*.MP3,*.WAV,*.FLAC,*.AAC,*.OGG,*.WMA,*.M4A,*.AIFF",
+                        "Videos;*.MP4,*.AVI,*.MKV,*.MOV,*.WMV,*.FLV,*.WEBM,*.MPEG,*.MPG,*.3GP",
+                        "Documents;*.DOC,*.DOCX,*.PDF,*.TXT,*.RTF,*.ODT,*.XLS,*.XLSX,*.CSV,*.PPT,*.PPTX",
+                        "Compressed Files;*.ZIP,*.RAR,*.7Z,*.TAR,*.GZ,*.BZ2",
+                        "Exe and Scripts;*.EXE,*.DLL,*.MSI,*.BAT,*.CMD,*.SH,*.PY,*.RB,*.JS,*.JAR",
+                        "Code Markups;*.HTML,*.HTM,*.CSS,*.JS,*.PHP,*.ASP,*.ASPX,*.CS,*.C,*.CPP,*.H,*.JAVA,*.PY,*.RB,*.GO,*.SWIFT,*.TS,*.XML,*.JSON,*.YML,*.MD",
+                        "Disk Images;*.ISO,*.IMG,*.BIN,*.NRG,*.DMG",
+                        "Fonts;*.TTF,*.OTF,*.FNT,*.WOFF,*.WOFF2",
+                        "3D and CAD;*.OBJ,*.STL,*.FBX,*.DAE,*.BLEND,*.3DS,*.DXF",
+                        "Miscs;*.LOG,*.CFG,*.INI,*.DAT,*.BAK"
+                    };
+                File.WriteAllLines($"C:\\Users\\{userName}\\Downloads\\Settings\\Settings.txt", lines);
+
+            }
+        }
+
+        private void InsertSettings()
+        {
+            string[] files = File.ReadAllLines($"C:\\Users\\{userName}\\Downloads\\Settings\\Settings.txt");
+            eventLog.WriteEntry(files[0], EventLogEntryType.Error);
+            foreach (string line in files)
+            {
+                char c = line[0];
+                if (line[0].Equals('#'))
+                {
+                    Console.WriteLine("Comment registered");
+                }
+                else
+                {
+                    string folder = line.Split(';').First();
+                    string[] exts = line.Split(';').Last().Split(',');
+                    FileTypes.Add(folder);
+                    AllExtensionsHere.Add(exts);
+                }
+
+            }
+        }
+        
 
         private void KeepServiceRunning()
         {
@@ -75,53 +135,9 @@ namespace DownloadSorter
             timer.Stop();
             base.OnStop();
         }
-        //-------------------------------------------------------------------------------------------------------\\
-        //-------------------- WHERE TO EDIT CODE FOR YOUR LIKING - read instructions bellow --------------------\\
-        //-------------------------------------------------------------------------------------------------------\\
+        public static List<string> FileTypes = new List<string>() ;
 
-        // /*!!!!*/ - Importans rows, make sure to read warning bellow
-        //!!!!// If you want to edit Folders or filters, make sure FileTypes aka. folder's names are in same order as extensions u want to get in them, //!!!!//
-        //!!!!// e.g. of wrong order: if u have first Audios in FileTypes and first in AllExtensionsHere you have ImageExtensions, all files that has Image extensions will go in Audios folder, not Image folder!!! //!!!!//
-
-        //Instructions: Always follow format otherwise code will not work with file with that specific extension
-        //              You can modify name of Folders as you wish, nothing will break (FileTypes)
-        //              If you want to add new folder and filter extensions (you can even filter custom extensions like "*1234.534.PNG" (at least I hope so, you can try)):
-        //                  1. Create new List and name it as you wish
-        //                  2. Type into list extensions you want to filter
-        //                  3. "Create" folder by just writing name of folder in FileTypes
-        //                  4. Put name of EXTENSION List you made into AllExtensionsHere and put it in order as it is in FileTypes, why? Read warning.
-
-/*!!!!*/public static readonly List<string> FileTypes = new List<string>() { "Images", "Audios", "Videos", "Documents", "Compressed Files", "Exe and Scripts", "Code Markups", "Disk Images", "Fonts", "3D and CAD", "Miscs", "Others" };
-        public static readonly List<string> ImageExtensions = new List<string> { "*.JPG", "*.JPEG", "*.PNG", "*.GIF", "*.BMP", "*.TIFF", "*.TIF", "*.WEBP", "*.SVG", "*.ICO" };
-        public static readonly List<string> AudioExtensions = new List<string> { "*.MP3", "*.WAV", "*.FLAC", "*.AAC", "*.OGG", "*.WMA", "*.M4A", "*.AIFF" };
-        public static readonly List<string> VideoExtensions = new List<string> { "*.MP4", "*.AVI", "*.MKV", "*.MOV", "*.WMV", "*.FLV", "*.WEBM", "*.MPEG", "*.MPG", "*.3GP" };
-        public static readonly List<string> DocumentExtensions = new List<string> { "*.DOC", "*.DOCX", "*.PDF", "*.TXT", "*.RTF", "*.ODT", "*.XLS", "*.XLSX", "*.CSV", "*.PPT", "*.PPTX" };
-        public static readonly List<string> CompressExtensions = new List<string> { "*.ZIP", "*.RAR", "*.7Z", "*.TAR", "*.GZ", "*.BZ2" };
-        public static readonly List<string> Exe_ScriptExtensions = new List<string> { "*.EXE", "*.DLL", "*.MSI", "*.BAT", "*.CMD", "*.SH", "*.PY", "*.RB", "*.JS", "*.JAR" };
-        public static readonly List<string> Code_MarkupExtensions = new List<string> { "*.HTML", "*.HTM", "*.CSS", "*.JS", "*.PHP", "*.ASP", "*.ASPX", "*.CS", "*.C", "*.CPP", "*.H", "*.JAVA", "*.PY", "*.RB", "*.GO", "*.SWIFT", "*.TS", "*.XML", "*.JSON", "*.YML", "*.MD" };
-        public static readonly List<string> DiskImageExtensions = new List<string> { "*.ISO", "*.IMG", "*.BIN", "*.NRG", "*.DMG" };
-        public static readonly List<string> FontExtensions = new List<string> { "*.TTF", "*.OTF", "*.FNT", "*.WOFF", "*.WOFF2" };
-        public static readonly List<string> ThreeD_CADExtensions = new List<string> { "*.OBJ", "*.STL", "*.FBX", "*.DAE", "*.BLEND", "*.3DS", "*.DXF" };
-        public static readonly List<string> MiscExtensions = new List<string> { "*.LOG", "*.CFG", "*.INI", "*.DAT", "*.BAK" };
-
-
-/*!!!!*/public static readonly List<List<string>> AllExtensionsHere = new List<List<string>>
-/*!!!!*/{
-              ImageExtensions,
-              AudioExtensions,
-              VideoExtensions,
-              DocumentExtensions,
-              CompressExtensions,
-              Exe_ScriptExtensions,
-              Code_MarkupExtensions,
-              DiskImageExtensions,
-              FontExtensions,
-              ThreeD_CADExtensions,
-              MiscExtensions
-/*!!!!*/};
-        //--------------------------------------------------------------------------------------------------------------\\
-        //--------------------  WHERE YOU SHOULD STOP EDITING CODE IF U ARE NOT EXPERIENCED WITH C# --------------------\\
-        //--------------------------------------------------------------------------------------------------------------\\
+        public static List<string[]> AllExtensionsHere = new List<string[]>();
         private static string getUserName()
         {
             SelectQuery query = new SelectQuery(@"Select * from Win32_Process");
@@ -186,8 +202,15 @@ namespace DownloadSorter
             int FolderIndex = 0;
             //eventLog.WriteEntry("FileName origo: " + fileName + "FileName bez konce: " + fileName1 + "filename s datem a koncem: " + fileName2 , EventLogEntryType.Information);  // for debuging purposes - LOGS
             string StarAndfileExtension = fileExtension.Insert(0, "*");
-            foreach (List<string> AllExt in AllExtensionsHere)
+            foreach (string[] AllExt in AllExtensionsHere)
             {
+                foreach(string CusExt in AllExt)
+                {
+                    if (fileName.Contains(CusExt.Split('*').Last().ToLower()))
+                    {
+                        StarAndfileExtension = CusExt;
+                    }
+                }
                 eventLog.WriteEntry("Current file extensions scanning: " + AllExt, EventLogEntryType.Information);  // for debuging purposes - LOGS
                 eventLog.WriteEntry("Ext to scan: " + StarAndfileExtension + " Default Ext: " + fileExtension, EventLogEntryType.Information);  // for debuging purposes - LOGS
                 eventLog.WriteEntry("AllExt Format Check: " + AllExt[0],EventLogEntryType.Information);  // for debuging purposes - LOGS
